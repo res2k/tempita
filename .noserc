@@ -1,0 +1,6 @@
+match=^test
+nocapture=1
+verbose=1
+doctest=1
+doctest-options=+ELLIPSIS
+
