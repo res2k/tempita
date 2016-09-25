@@ -16,9 +16,8 @@ env:
     - TOX_ENV=py35
     - TOX_ENV=pypy
 
-install: "pip install flake8 tox"
 install:
-    - pip install -r requirements.txt
+    - pip install flake8 tox
     - python setup.py install
 script:
     - tox -e $TOX_ENV
