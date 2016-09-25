@@ -153,6 +153,8 @@ class Template(object):
         f.close()
         if encoding:
             c = c.decode(encoding)
+        elif PY3:
+            c = c.decode('latin-1')
         return cls(content=c, name=filename, namespace=namespace,
                    default_inherit=default_inherit, get_template=get_template)
 

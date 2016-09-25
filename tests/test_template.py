@@ -19,10 +19,16 @@ class TestTempita(unittest.TestCase):
     def test_doctest_docs_index(self):
         doctest.testfile('../docs/index.txt')
 
-    def test_read_template_from_file(self):
+    def test_read_template_from_file_with_encoding(self):
         filename = '/tests/test_basetemplate.txt'
         namespace = dict(name="Arthur Dent")
         t = Template.from_filename(sys.path[0] + filename, namespace=namespace, encoding="latin-1")
+        print(t)
+
+    def test_read_template_from_file_without_encoding(self):
+        filename = '/tests/test_basetemplate.txt'
+        namespace = dict(name="Arthur Dent")
+        t = Template.from_filename(sys.path[0] + filename, namespace=namespace, encoding=None)
         print(t)
 
 if __name__ == "__main__":
