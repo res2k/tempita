@@ -79,7 +79,7 @@ You can give a name to your template, which is handy when there is an
 error (the name will be displayed)::
 
     >>> tmpl = tempita.Template('Hi {{name}}', name='tmpl')
-    >>> tmpl.substitute()
+    >>> tmpl.substitute() # doctest: +ELLIPSIS
     Traceback (most recent call last):
         ...
     NameError: name 'name' is not defined at line 1 column 6 in file tmpl
@@ -289,7 +289,7 @@ lets you use attributes::
     >>> bunch.items()
     [('a', 1)]
     >>> bunch.default = None
-    >>> print bunch.b
+    >>> print(bunch.b)
     None
 
 This can be nice for passing options into a template.

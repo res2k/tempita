@@ -31,13 +31,20 @@ If there are syntax errors ``TemplateError`` will be raised.
 
 import re
 import sys
-import cgi
-from urllib import quote as url_quote
+try:
+    from urllib.parse import quote as url_quote
+    from io import StringIO
+    from html import escape as html_escape
+except ImportError:
+    from urllib import quote as url_quote
+    from cStringIO import StringIO
+    from cgi import escape as html_escape
 import os
 import tokenize
-from cStringIO import StringIO
-from tempita._looper import looper
-from tempita.compat3 import PY3, bytes, basestring_, next, is_unicode, coerce_text
+from ._looper import looper
+from .compat3 import (
+    PY3, bytes, basestring_, next, is_unicode, coerce_text)
+import six
 
 __all__ = ['TemplateError', 'Template', 'sub', 'HTMLTemplate',
            'sub_html', 'html', 'bunch']
@@ -102,7 +109,7 @@ class Template(object):
                           self.default_namespace['end_braces'])
         else:
             assert len(delimeters) == 2 and all(
-                [isinstance(delimeter, basestring)
+                [isinstance(delimeter, basestring_)
                     for delimeter in delimeters])
             self.default_namespace = self.__class__.default_namespace.copy()
             self.default_namespace['start_braces'] = delimeters[0]
@@ -200,7 +207,7 @@ class Template(object):
                 position=None, name=self.name)
         templ = self.get_template(inherit_template, self)
         self_ = TemplateObject(self.name)
-        for name, value in defs.iteritems():
+        for name, value in six.iteritems(defs):
             setattr(self_, name, value)
         self_.body = body
         ns = ns.copy()
@@ -308,7 +315,10 @@ class Template(object):
             else:
                 arg0 = coerce_text(e)
             e.args = (self._add_line_info(arg0, pos),)
-            raise (exc_info[1], e, exc_info[2])
+            if PY3:
+                raise(e)
+            else:
+                raise (exc_info[1], e, exc_info[2])
 
     def _exec(self, code, ns, pos):
         # __traceback_hide__ = True
@@ -321,7 +331,10 @@ class Template(object):
                 e.args = (self._add_line_info(e.args[0], pos),)
             else:
                 e.args = (self._add_line_info(None, pos),)
-            raise(exc_info[1], e, exc_info[2])
+            if PY3:
+                raise(e)
+            else:
+                raise (exc_info[1], e, exc_info[2])
 
     def _repr(self, value, pos):
         # __traceback_hide__ = True
@@ -329,10 +342,9 @@ class Template(object):
             if value is None:
                 return ''
             if self._unicode:
-                try:
-                    value = unicode(value)
-                except UnicodeDecodeError:
-                    value = bytes(value)
+                value = str(value)
+                if not is_unicode(value):
+                    value = value.decode('utf-8')
             else:
                 if not isinstance(value, basestring_):
                     value = coerce_text(value)
@@ -342,7 +354,10 @@ class Template(object):
             exc_info = sys.exc_info()
             e = exc_info[1]
             e.args = (self._add_line_info(e.args[0], pos),)
-            raise(exc_info[1], e, exc_info[2])
+            if PY3:
+                raise(e)
+            else:
+                raise (exc_info[1], e, exc_info[2])
         else:
             if self._unicode and isinstance(value, bytes):
                 if not self.default_encoding:
@@ -388,7 +403,7 @@ def paste_script_template_renderer(content, vars, filename=None):
 class bunch(dict):
 
     def __init__(self, **kw):
-        for name, value in kw.iteritems():
+        for name, value in six.iteritems(kw):
             setattr(self, name, value)
 
     def __setattr__(self, name, value):
@@ -411,14 +426,14 @@ class bunch(dict):
 
     def __repr__(self):
         items = [
-            (k, v) for k, v in self.iteritems()]
+            (k, v) for k, v in six.iteritems(self)]
         items.sort()
         return '<%s %s>' % (
             self.__class__.__name__,
             ' '.join(['%s=%r' % (k, v) for k, v in items]))
 
 ############################################################
-## HTML Templating
+# HTML Templating
 ############################################################
 
 
@@ -446,10 +461,10 @@ def html_quote(value, force=True):
     if not isinstance(value, basestring_):
         value = coerce_text(value)
     if sys.version >= "3" and isinstance(value, bytes):
-        value = cgi.escape(value.decode('latin1'), 1)
+        value = html_escape(value.decode('latin1'), 1)
         value = value.encode('latin1')
     else:
-        value = cgi.escape(value, 1)
+        value = html_escape(value, 1)
     if sys.version < "3":
         if is_unicode(value):
             value = value.encode('ascii', 'xmlcharrefreplace')
@@ -464,7 +479,7 @@ def url(v):
 
 
 def attr(**kw):
-    kw = list(kw.iteritems())
+    kw = list(six.iteritems(kw))
     kw.sort()
     parts = []
     for name, value in kw:
@@ -545,7 +560,7 @@ class TemplateDef(object):
         values = {}
         sig_args, var_args, var_kw, defaults = self._func_signature
         extra_kw = {}
-        for name, value in kw.iteritems():
+        for name, value in six.iteritems(kw):
             if not var_kw and name not in sig_args:
                 raise TypeError(
                     'Unexpected argument %s' % name)
@@ -568,7 +583,7 @@ class TemplateDef(object):
                 raise TypeError(
                     'Extra position arguments: %s'
                     % ', '.join(repr(v) for v in args))
-        for name, value_expr in defaults.iteritems():
+        for name, value_expr in six.iteritems(defaults):
             if name not in values:
                 values[name] = self._template._eval(
                     value_expr, self._ns, self._pos)
@@ -615,7 +630,7 @@ class _Empty(object):
         return 'Empty'
 
     def __unicode__(self):
-        return u''
+        return '' if PY3 else u''
 
     def __iter__(self):
         return iter(())
@@ -630,7 +645,7 @@ Empty = _Empty()
 del _Empty
 
 ############################################################
-## Lexing and Parsing
+# Lexing and Parsing
 ############################################################
 
 
@@ -742,17 +757,17 @@ def trim_lex(tokens):
         else:
             next_chunk = tokens[i + 1]
         if (not
-                isinstance(next_chunk, basestring_)
-                or not isinstance(prev, basestring_)):
+                isinstance(next_chunk, basestring_) or
+                not isinstance(prev, basestring_)):
             continue
         prev_ok = not prev or trail_whitespace_re.search(prev)
         if i == 1 and not prev.strip():
             prev_ok = True
         if last_trim is not None and last_trim + 2 == i and not prev.strip():
             prev_ok = 'last'
-        if (prev_ok
-            and (not next_chunk or lead_whitespace_re.search(next_chunk)
-                 or (i == len(tokens) - 2 and not next_chunk.strip()))):
+        if (prev_ok and (not next_chunk or lead_whitespace_re.search(
+                         next_chunk) or (
+                         i == len(tokens) - 2 and not next_chunk.strip()))):
             if prev:
                 if ((i == 1 and not prev.strip()) or prev_ok == 'last'):
                     tokens[i - 1] = ''
@@ -956,8 +971,7 @@ def parse_expr(tokens, name, context=()):
         return (expr, pos), tokens[1:]
     elif expr.startswith('if '):
         return parse_cond(tokens, name, context)
-    elif (expr.startswith('elif ')
-          or expr == 'else'):
+    elif (expr.startswith('elif ') or expr == 'else'):
         raise TemplateError(
             '%s outside of an if block' % expr.split()[0],
             position=pos, name=name)
@@ -1015,10 +1029,9 @@ def parse_one_cond(tokens, name, context):
             raise TemplateError(
                 'No {{endif}}',
                 position=pos, name=name)
-        if (isinstance(tokens[0], tuple)
-            and (tokens[0][0] == 'endif'
-                 or tokens[0][0].startswith('elif ')
-                 or tokens[0][0] == 'else')):
+        if (isinstance(tokens[0], tuple) and (
+                tokens[0][0] == 'endif' or tokens[0][0].startswith(
+                    'elif ') or tokens[0][0] == 'else')):
             return part, tokens
         next_chunk, tokens = parse_expr(tokens, name, context)
         content.append(next_chunk)
@@ -1275,7 +1288,7 @@ def fill_command(args=None):
         template_content = sys.stdin.read()
         template_name = '<stdin>'
     else:
-        f = open(template_name, 'rb')
+        f = open(template_name, 'rb', encoding="latin-1")
         template_content = f.read()
         f.close()
     if options.use_html:

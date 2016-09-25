@@ -1,6 +1,6 @@
 match=^test
 nocapture=1
-verbose=1
+verbose=2
 doctest=1
-doctest-options=+ELLIPSIS
+doctest-options=+ELLIPSIS,IGNORE_EXCEPTION_DETAIL
 

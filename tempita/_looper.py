@@ -149,8 +149,7 @@ class loop_pos(object):
     def _compare_group(self, item, other, getter):
         if getter is None:
             return item != other
-        elif (isinstance(getter, basestring_)
-              and getter.startswith('.')):
+        elif (isinstance(getter, basestring_) and getter.startswith('.')):
             getter = getter[1:]
             if getter.endswith('()'):
                 getter = getter[:-2]

@@ -1,13 +1,10 @@
 """Dicstring."""
 import unittest
-import sys
-import os
 import platform
 import doctest
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 
-class TestAdd(unittest.TestCase):
+class TestTempita(unittest.TestCase):
     """Dicstring."""
     def test_template(self):
         if platform.python_implementation == 'CPython':
