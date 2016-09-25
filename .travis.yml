@@ -23,5 +23,4 @@ install:
 script:
     - tox -e $TOX_ENV
 before_script:
-    # Just for py2, for sanity's sake.
-    - flake8 --exit-zero tempita; fi
+    - flake8 --exit-zero tempita
