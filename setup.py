@@ -55,7 +55,6 @@ more to learn about it.
       url='http://pythonpaste.org/tempita/',
       license='MIT',
       packages=['tempita'],
-      install_requires=['six'],
       tests_require=['nose'],
       test_suite='nose.collector',
       include_package_data=True,

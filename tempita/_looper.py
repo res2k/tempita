@@ -17,9 +17,10 @@ looper you can get a better sense of the context.  Use like::
     3 c
 
 """
+from __future__ import absolute_import, division, print_function
 
 import sys
-from tempita.compat3 import basestring_
+from .compat3 import basestring_
 
 __all__ = ['looper']
 
