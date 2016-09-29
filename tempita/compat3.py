@@ -1,28 +1,38 @@
+from __future__ import absolute_import, division, print_function
+
 import sys
 
-__all__ = ['PY3', 'b', 'basestring_', 'bytes', 'next', 'is_unicode']
+__all__ = ['PY3', 'b', 'basestring_', 'bytes', 'next', 'is_unicode',
+           'iteritems']
 
 PY3 = True if sys.version_info[0] == 3 else False
 
 if sys.version_info[0] < 3:
+
+    def next(obj):
+        return obj.next()
+
+    def iteritems(d, **kw):
+        return d.iteritems(**kw)
+
     b = bytes = str
     basestring_ = basestring
+
 else:
 
     def b(s):
         if isinstance(s, str):
             return s.encode('latin1')
         return bytes(s)
+
+    def iteritems(d, **kw):
+        return iter(d.items(**kw))
+
+    next = next
     basestring_ = (bytes, str)
     bytes = bytes
+
 text = str
-
-if sys.version_info[0] < 3:
-
-    def next(obj):
-        return obj.next()
-else:
-    next = next
 
 
 def is_unicode(obj):
