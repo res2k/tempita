@@ -87,6 +87,24 @@ def get_file_template(name, from_template):
         path, namespace=from_template.namespace,
         get_template=from_template.get_template)
 
+# Helper so we can get the substitution-specific current line
+# without having to rely on globals
+# from https://stackoverflow.com/questions/14692071/sharing-scope-in-python-between-called-and-calling-functions
+def _calling_scope_variable(name):
+    frame = inspect.stack()[1][0]
+    while name not in frame.f_locals:
+        frame = frame.f_back
+        if frame is None:
+            return None
+    return frame.f_locals[name]
+
+# Apply auto-indendation by prepending the 'current line'
+def _autoindent(value):
+    current_line = _calling_scope_variable('__current_line__')
+    lines = value.splitlines()
+    if len(lines) == 0:
+        return ""
+    return "\n".join([lines[0]] + list(map(lambda s: current_line+s, lines[1:])))
 
 class Template(object):
 
@@ -94,6 +112,7 @@ class Template(object):
         'start_braces': '{{',
         'end_braces': '}}',
         'looper': looper,
+        'autoindent': _autoindent,
     }
 
     default_encoding = 'utf8'
@@ -191,16 +210,30 @@ class Template(object):
             result = self._interpret_inherit(result, defs, inherit, ns)
         return result
 
+    class OutputSink(object):
+        def __init__(self):
+            self.parts = []
+            self.current_line = ''
+
+        def append(self, what):
+            self.parts.append(what)
+            # Either append what to current_line, or handle a new line
+            what_nl = what.rfind('\n')
+            if what_nl == -1:
+                self.current_line += what
+            else:
+                self.current_line = what[what_nl+1:]
+
     def _interpret(self, ns):
         # __traceback_hide__ = True
-        parts = []
+        out = self.OutputSink()
         defs = {}
-        self._interpret_codes(self._parsed, ns, out=parts, defs=defs)
+        self._interpret_codes(self._parsed, ns, out=out, defs=defs)
         if '__inherit__' in defs:
             inherit = defs.pop('__inherit__')
         else:
             inherit = None
-        return ''.join(parts), defs, inherit
+        return ''.join(out.parts), defs, inherit
 
     def _interpret_inherit(self, body, defs, inherit_template, ns):
         # __traceback_hide__ = True
@@ -228,6 +261,8 @@ class Template(object):
     def _interpret_code(self, code, ns, out, defs):
         # __traceback_hide__ = True
         name, pos = code[0], code[1]
+        if isinstance(out, self.OutputSink):
+            __current_line__ = out.current_line # _calling_scope_variable will pick it up
         if name == 'py':
             self._exec(code[2], ns, pos)
         elif name == 'continue':
