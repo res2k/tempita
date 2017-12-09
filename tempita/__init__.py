@@ -40,6 +40,7 @@ except ImportError:
     from urllib import quote as url_quote
     from cStringIO import StringIO
     from cgi import escape as html_escape
+import inspect
 import os
 import tokenize
 from ._looper import looper
