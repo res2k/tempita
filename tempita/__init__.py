@@ -772,8 +772,8 @@ Lex a string into chunks:
 
 statement_re = re.compile(r'^(?:if |elif |for |def |inherit |default |py:)')
 single_statements = ['else', 'endif', 'endfor', 'enddef', 'continue', 'break']
-trail_whitespace_re = re.compile(r'\n\r?[\t ]*$')
-lead_whitespace_re = re.compile(r'^[\t ]*\n')
+trail_whitespace_re = re.compile(r'\r?\n[\t ]*$')
+lead_whitespace_re = re.compile(r'^[\t ]*\r?\n')
 
 
 def trim_lex(tokens):
